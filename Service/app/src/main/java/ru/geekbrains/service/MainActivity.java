@@ -5,11 +5,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +22,11 @@ public class MainActivity extends AppCompatActivity {
     static final String BROADCAST_ACTION_CALCFINISHED = "ru.geekbrains.service.calculationfinished";
     private TextView textResult;
     private EditText editSeconds;
+
+    private TextView textFibonacci;
+
+    private boolean isBound = false;
+    private BoundService.ServiceBinder boundService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         unregisterReceiver(calculationFinishedReceiver);
+
+        if (isBound){
+            unbindService(boundServiceConnection);
+        }
     }
 
     private void initView() {
@@ -60,6 +72,29 @@ public class MainActivity extends AppCompatActivity {
                 CalculationService.startCalculationService(MainActivity.this, seconds);
             }
         });
+
+        textFibonacci = findViewById(R.id.textFibonacci);
+        findViewById(R.id.buttonBindService).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // По нажатию кнопки соединяемся с сервисом
+                Intent intent = new Intent(MainActivity.this, BoundService.class);
+                bindService(intent, boundServiceConnection, BIND_AUTO_CREATE);
+            }
+        });
+        findViewById(R.id.buttonNextFibo).setOnClickListener(new View.OnClickListener() {
+            // Вызовем у сервиса метод, если он был соединён
+            @Override
+            public void onClick(View v) {
+                if (boundService == null) {
+                    textFibonacci.setText("Unbound service");
+                } else {
+                    long fibo = boundService.getNextFibonacci();
+                    textFibonacci.setText(Long.toString(fibo));
+                }
+            }
+        });
+
     }
 
     // На Android OS версии 2.6 и выше нужно создать канал нотификации.
@@ -85,6 +120,24 @@ public class MainActivity extends AppCompatActivity {
                     textResult.setText(Long.toString(result));
                 }
             });
+        }
+    };
+
+    // Обработка соединения с сервисом
+    private ServiceConnection boundServiceConnection = new ServiceConnection() {
+
+        // При соединении с сервисом
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            boundService = (BoundService.ServiceBinder) service;
+            isBound = boundService != null;
+        }
+
+        // При разрыве соединения с сервисом
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false;
+            boundService = null;
         }
     };
 
