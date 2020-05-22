@@ -3,6 +3,9 @@ package ru.geekbrains.thread;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
         initView();
         initUIButton();
         initThreadButton();
+        initButtonHandlerThread();
     }
 
     private void initView() {
@@ -73,6 +77,38 @@ public class MainActivity extends AppCompatActivity {
                         });
                     }
                 }).start();
+            }
+        });
+    }
+
+    private void initButtonHandlerThread(){
+        Button calcThread = findViewById(R.id.calcThreadHandler);
+        final HandlerThread handlerThread = new HandlerThread("HandlerThread");
+        handlerThread.start();
+        final Handler handler = new Handler(handlerThread.getLooper());
+
+        calcThread.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                textIndicator.setText(String.format("%sобращаемся в поток %s\n",
+                        textIndicator.getText().toString(),
+                        handlerThread.getName()));
+                final int secs = Integer.parseInt(seconds.getText().toString());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        calculate(secs);
+                        final String nameThread = Thread.currentThread().getName();
+                        textIndicator.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                textIndicator.setText(String.format("%sИз потока %s\n",
+                                        textIndicator.getText().toString(),
+                                        nameThread));
+                            }
+                        });
+                    }
+                });
             }
         });
     }
