@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
         initUIButton();
         initThreadButton();
         initButtonHandlerThread();
+        initProcessor();
     }
 
     private void initView() {
@@ -109,6 +110,23 @@ public class MainActivity extends AppCompatActivity {
                         });
                     }
                 });
+            }
+        });
+    }
+
+    private void initProcessor(){
+        Button button = findViewById(R.id.button2);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Processor processor = new Processor(new Processor.ProcessListener() {
+                    @Override
+                    public void onFinish(String param) {
+                        textIndicator.setText(String.format("%sИз потока в классе\n", textIndicator.getText().toString()));
+                        textView.setText(param);
+                    }
+                });
+                processor.process(Integer.parseInt(seconds.getText().toString()));
             }
         });
     }
